@@ -1,3 +1,31 @@
+/*
+ * Only for first run.
+ */
+if (!localStorage.udacitySchoolAttendance) {
+    localStorage.udacitySchoolAttendance = JSON.stringify([
+        {
+            "name": "Slappy the Frog",
+            "dailyAttendency": [false, false, false, false, false, false, false, false, false, false, false, false]
+        },
+        {
+            "name": "Lilly the Lizard",
+            "dailyAttendency": [false, false, false, false, false, false, false, false, false, false, false, false]
+        },
+        {
+            "name": "Paulrus the Walrus",
+            "dailyAttendency": [false, false, false, false, false, false, false, false, false, false, false, false]
+        },
+        {
+            "name": "Gregory the Goat",
+            "dailyAttendency": [false, false, false, false, false, false, false, false, false, false, false, false]
+        },
+        {
+            "name": "Adam the Anaconda",
+            "dailyAttendency": [false, false, false, false, false, false, false, false, false, false, false, false]
+        }
+    ]);
+}
+
 var rawModel = {
     _data: JSON.parse(localStorage.udacitySchoolAttendance),
 
@@ -34,7 +62,7 @@ var rawModel = {
 };
 
 /**
- * Proxy of rawModel for automatically saving and refreshing on invoking.
+ * Proxy of rawModel for automatically saving and refreshing data on invoking.
  */
 var model = new Proxy(rawModel, {
     get: function (target, name, receiver) {
@@ -77,6 +105,9 @@ var presenter = {
     },
 
     changeAttendancy(studentName, isAttendended, nthDay, nthStudent=null) {
+        if (isAttendended) {
+            isAttendended = true;
+        }
         model.changeAttendancy(studentName, isAttendended, nthDay, nthStudent);
         view.render();
     }
@@ -103,17 +134,19 @@ var view = {
                 chkbox.id = `day-r${rowIndex + 1}-d${colIndex + 1}`;
                 chkbox.type = 'checkbox';
                 chkbox.checked = isAttended;
-                chkbox.addEventListener('change', () => {
-                    var isChecked = document.getElementById(`day-r${rowIndex + 1}-d${colIndex + 1}`).checked;
-                    // console.warn(isChecked);
-                    presenter.changeAttendancy(rowData.name, isChecked, colIndex, rowIndex);
-                });
 
                 var td = document.createElement('td');
                 td.appendChild(chkbox);
 
                 var tr = tbody.querySelector(`tr:nth-child(${rowIndex + 1})`);
-                tr.insertBefore(td, tbody.querySelector(`tr:nth-child(${rowIndex + 1}) td.missed-col`));
+                tr.insertBefore(td, tr.lastElementChild);
+
+                chkbox.addEventListener('change', () => {
+                    // use `colIndex + 1` here, since we have a `<td class="name-col">` as first column
+                    var isChecked = tr.children.item(colIndex + 1).firstElementChild.checked;
+                    // console.debug(isChecked);
+                    presenter.changeAttendancy(rowData.name, isChecked, colIndex, rowIndex);
+                });
             });
         });
     },
@@ -124,7 +157,7 @@ var view = {
             var td = tds.item(tds.length - 1);
             td.innerText = presenter.countMissing(rowData.name, rowIndex);
             rowData.dailyAttendency.forEach((isAttended, colIndex) => {
-                var chked = document.getElementById(`day-r${rowIndex + 1}-d${colIndex + 1}`).checked = isAttended;
+                tds.item(colIndex + 1).checked = isAttended; // we have a `<td class="name-col">` as first column
             });
         });
     },
